@@ -16,6 +16,23 @@ fn main() -> std::io::Result<()> {
 }
 ```
 
+## Examples
+
+### Routing
+
+```rust
+use rustpages::{App, Page, PageWithRoutes, SimplePage, TextPage};
+
+fn main() -> std::io::Result<()> {
+    let app = App::new(Box::new(PageWithRoutes::new(
+        "/",
+        Box::new(TextPage::new("Hello, world!")),
+        Box::new(SimplePage::new("Not found!")),
+    )));
+    app.start(8080)
+}
+```
+
 ## Development
 
 - [Guidelines for local design rules](GUIDELINES.md)

@@ -1,6 +1,7 @@
 mod app;
 mod output;
 mod page;
+mod page_with_routes;
 mod page_with_type;
 mod session;
 mod simple_output;
@@ -10,6 +11,7 @@ mod text_page;
 pub use crate::app::App;
 pub use crate::output::Output;
 pub use crate::page::Page;
+pub use crate::page_with_routes::PageWithRoutes;
 pub use crate::page_with_type::PageWithType;
 pub use crate::session::Session;
 pub use crate::simple_output::SimpleOutput;
