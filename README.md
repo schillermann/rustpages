@@ -33,6 +33,100 @@ fn main() -> std::io::Result<()> {
 }
 ```
 
+### Terminal Editor Core + UI (Minimal)
+
+This keeps the core and UI as separate processes. The core exposes `/state` and
+`/cmd` over HTTP; the UI sends commands and renders state.
+
+Core:
+
+```rust
+use rustpages::{App, Output, Page, SimpleOutput, TextPage};
+use std::sync::{Arc, Mutex};
+
+#[derive(Clone)]
+struct EditorPage {
+    state: Arc<Mutex<String>>,
+    path: String,
+    query: String,
+}
+
+impl EditorPage {
+    fn new(state: Arc<Mutex<String>>) -> Self {
+        Self {
+            state,
+            path: String::new(),
+            query: String::new(),
+        }
+    }
+
+    fn with_path(&self, path: &str) -> Self {
+        let mut next = self.clone();
+        next.path = path.to_string();
+        next
+    }
+
+    fn with_query(&self, query: &str) -> Self {
+        let mut next = self.clone();
+        next.query = query.to_string();
+        next
+    }
+}
+
+impl Page for EditorPage {
+    fn with(&self, key: &str, value: &str) -> Box<dyn Page> {
+        match key {
+            "RustPages-Path" => Box::new(self.with_path(value)),
+            "RustPages-Query" => Box::new(self.with_query(value)),
+            _ => Box::new(self.clone()),
+        }
+    }
+
+    fn via(&self, output: Box<dyn Output>) -> Box<dyn Output> {
+        match self.path.as_str() {
+            "/state" => {
+                let buf = self.state.lock().unwrap().clone();
+                output.with("RustPages-Body", &buf)
+            }
+            "/cmd" => {
+                if let Some((_, text)) = self.query.split_once("insert=") {
+                    self.state.lock().unwrap().push_str(text);
+                }
+                output.with("RustPages-Body", "ok")
+            }
+            _ => TextPage::new("not found").via(output),
+        }
+    }
+}
+
+fn main() -> std::io::Result<()> {
+    let state = Arc::new(Mutex::new(String::new()));
+    App::new(Box::new(EditorPage::new(state))).start(8080)
+}
+```
+
+UI:
+
+```rust
+use std::io::{Read, Write};
+use std::net::TcpStream;
+
+fn request(path: &str) -> String {
+    let mut stream = TcpStream::connect(("127.0.0.1", 8080)).unwrap();
+    let req = format!("GET {} HTTP/1.1\r\nHost: localhost\r\n\r\n", path);
+    stream.write_all(req.as_bytes()).unwrap();
+    let mut bytes = Vec::new();
+    stream.read_to_end(&mut bytes).unwrap();
+    String::from_utf8_lossy(&bytes).to_string()
+}
+
+fn main() {
+    let _ = request("/cmd?insert=hello");
+    let resp = request("/state");
+    println!("{resp}");
+}
+```
+
 ## Development
 
 - [Guidelines for local design rules](GUIDELINES.md)
