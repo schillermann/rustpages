@@ -5,7 +5,11 @@
 Rustpages is a framework based on the structure of [jpages framework](https://github.com/yegor256/jpages) and the OOP style guides by [Yegor Bugayenko](https://www.yegor256.com/2014/11/20/seven-virtues-of-good-object.html).
 It serves as the foundation for another project to build a terminal-based editor like [NeoVim](https://neovim.io/) with a separate UI and core, communicating via HTTP over TCP.
 
-## Quickstart
+## Examples
+
+### Web Server
+
+#### Quickstart
 
 ```rust
 use rustpages::{App, TextPage};
@@ -16,9 +20,7 @@ fn main() -> std::io::Result<()> {
 }
 ```
 
-## Examples
-
-### Routing
+#### Routing
 
 ```rust
 use rustpages::{App, Page, PageWithRoutes, SimplePage, TextPage};
@@ -33,12 +35,14 @@ fn main() -> std::io::Result<()> {
 }
 ```
 
-### Terminal Editor Core + UI (Minimal)
+### TUI
+
+#### Quickstart
 
 This keeps the core and UI as separate processes. The core exposes `/state` and
 `/cmd` over HTTP; the UI sends commands and renders state.
 
-Core:
+##### Core
 
 ```rust
 use rustpages::{App, Output, Page, SimpleOutput, TextPage};
@@ -105,7 +109,7 @@ fn main() -> std::io::Result<()> {
 }
 ```
 
-UI:
+##### UI
 
 ```rust
 use std::io::{Read, Write};
