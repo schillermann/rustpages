@@ -1,20 +1,20 @@
 use crate::Page;
 use std::collections::HashMap;
 
-pub struct Session {
-    page: Box<dyn Page>,
+pub struct Session<'a> {
+    page: &'a dyn Page,
 }
 
-impl Session {
-    pub fn new(page: Box<dyn Page>) -> Self {
+impl<'a> Session<'a> {
+    pub fn new(page: &'a dyn Page) -> Self {
         Self { page }
     }
 
-    pub fn with(self, request: &str) -> Box<dyn Page> {
+    pub fn with(&self, request: &str) -> Box<dyn Page> {
         let mut pairs: HashMap<String, String> = HashMap::new();
         let lines: Vec<&str> = request.split("\r\n").collect();
         if lines.is_empty() {
-            return self.page;
+            return self.page.with("", "");
         }
         for line in lines.iter().skip(1) {
             if line.is_empty() {
@@ -39,11 +39,15 @@ impl Session {
         pairs.insert("RustPages-Path".to_string(), path.to_string());
         pairs.insert("RustPages-Query".to_string(), query.to_string());
         pairs.insert("RustPages-Protocol".to_string(), protocol.to_string());
-        let mut target_page = self.page;
+        let mut target_page: Option<Box<dyn Page>> = None;
         for (key, value) in pairs {
-            target_page = target_page.with(&key, &value);
+            let next = match target_page {
+                None => self.page.with(&key, &value),
+                Some(page) => page.with(&key, &value),
+            };
+            target_page = Some(next);
         }
-        target_page
+        target_page.unwrap_or_else(|| self.page.with("", ""))
     }
 }
 
@@ -55,8 +59,8 @@ mod tests {
     struct TestPage;
 
     impl Page for TestPage {
-        fn with(self: Box<Self>, _key: &str, _value: &str) -> Box<dyn Page> {
-            self
+        fn with(&self, _key: &str, _value: &str) -> Box<dyn Page> {
+            Box::new(TestPage)
         }
 
         fn via(&self, output: Box<dyn Output>) -> Box<dyn Output> {
@@ -69,7 +73,8 @@ mod tests {
 
     #[test]
     fn test_works() {
-        let session = Session::new(Box::new(TestPage));
+        let page = TestPage;
+        let session = Session::new(&page);
         let page = session.with("GET / HTTP/1.1\r\n");
         let output = page.via(Box::new(SimpleOutput::new("")));
         let mut bytes = Vec::new();
