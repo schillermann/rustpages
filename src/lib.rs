@@ -1,4 +1,4 @@
-mod app;
+mod server;
 mod output;
 mod page;
 mod page_with_routes;
@@ -9,7 +9,7 @@ mod simple_page;
 mod text_page;
 mod verbose_page;
 
-pub use crate::app::App;
+pub use crate::server::Server;
 pub use crate::output::Output;
 pub use crate::page::Page;
 pub use crate::page_with_routes::PageWithRoutes;

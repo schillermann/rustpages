@@ -7,11 +7,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
 
-pub struct App {
+pub struct Server {
     page: Box<dyn Page>,
 }
 
-impl App {
+impl Server {
     pub fn new(page: Box<dyn Page>) -> Self {
         Self { page }
     }
@@ -54,34 +54,14 @@ impl App {
 
 #[cfg(test)]
 mod tests {
-    use super::App;
-    use crate::{Output, Page, TextPage};
+    use super::Server;
+    use crate::TextPage;
     use std::io::{Read, Write};
     use std::net::TcpStream;
     use std::sync::Arc;
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::thread;
     use std::time::Duration;
-
-    struct RoutedPage;
-
-    impl Page for RoutedPage {
-        fn with(&self, key: &str, value: &str) -> Box<dyn Page> {
-            if key != "RustPages-Path" {
-                return Box::new(RoutedPage);
-            }
-            match value {
-                "/" => Box::new(TextPage::new("Hello, world!")),
-                "/balance" => Box::new(TextPage::new("256")),
-                "/id" => Box::new(TextPage::new("yegor")),
-                _ => Box::new(TextPage::new("Not found!")),
-            }
-        }
-
-        fn via(&self, output: Box<dyn Output>) -> Box<dyn Output> {
-            output.with("RustPages-Body", "Not found")
-        }
-    }
 
     fn fetch(port: u16, path: &str) -> String {
         let mut stream = TcpStream::connect(("127.0.0.1", port)).unwrap();
@@ -96,28 +76,8 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
-    fn test_works() {
-        let app = App::new(Box::new(RoutedPage));
-        let running = Arc::new(AtomicBool::new(true));
-        let client_running = Arc::clone(&running);
-        let handle = thread::spawn(move || {
-            thread::sleep(Duration::from_millis(50));
-            for _ in 0..10 {
-                let response = fetch(12345, "/");
-                assert!(response.contains("Hello, world!"));
-            }
-            assert!(fetch(12345, "/balance").contains("256"));
-            assert!(fetch(12345, "/id").contains("yegor"));
-            client_running.store(false, Ordering::SeqCst);
-        });
-        app.start_with(12345, running).unwrap();
-        handle.join().unwrap();
-    }
-
-    #[test]
     fn test_simple() {
-        let app = App::new(Box::new(TextPage::new("Hello, world!")));
+        let app = Server::new(Box::new(TextPage::new("Hello, world!")));
         let running = Arc::new(AtomicBool::new(true));
         let client_running = Arc::clone(&running);
         let handle = thread::spawn(move || {

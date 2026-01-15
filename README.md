@@ -12,10 +12,10 @@ It serves as the foundation for another project to build a terminal-based editor
 #### Quickstart
 
 ```rust
-use rustpages::{App, TextPage};
+use rustpages::{Server, TextPage};
 
 fn main() -> std::io::Result<()> {
-    let app = App::new(Box::new(TextPage::new("Hello, world!")));
+    let app = Server::new(Box::new(TextPage::new("Hello, world!")));
     app.start(8080)
 }
 ```
@@ -23,10 +23,10 @@ fn main() -> std::io::Result<()> {
 #### Routing
 
 ```rust
-use rustpages::{App, Page, PageWithRoutes, SimplePage, TextPage};
+use rustpages::{Page, PageWithRoutes, Server, SimplePage, TextPage};
 
 fn main() -> std::io::Result<()> {
-    let app = App::new(Box::new(PageWithRoutes::new(
+    let app = Server::new(Box::new(PageWithRoutes::new(
         "/",
         Box::new(TextPage::new("Hello, world!")),
         Box::new(SimplePage::new("Not found!")),
@@ -45,7 +45,7 @@ This keeps the core and UI as separate processes. The core exposes `/state` and
 ##### Core
 
 ```rust
-use rustpages::{App, Output, Page, SimpleOutput, TextPage};
+use rustpages::{Output, Page, Server, SimpleOutput, TextPage};
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
@@ -105,7 +105,7 @@ impl Page for EditorPage {
 
 fn main() -> std::io::Result<()> {
     let state = Arc::new(Mutex::new(String::new()));
-    App::new(Box::new(EditorPage::new(state))).start(8080)
+    Server::new(Box::new(EditorPage::new(state))).start(8080)
 }
 ```
 
