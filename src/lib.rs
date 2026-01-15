@@ -7,6 +7,7 @@ mod session;
 mod simple_output;
 mod simple_page;
 mod text_page;
+mod verbose_page;
 
 pub use crate::app::App;
 pub use crate::output::Output;
@@ -17,3 +18,4 @@ pub use crate::session::Session;
 pub use crate::simple_output::SimpleOutput;
 pub use crate::simple_page::SimplePage;
 pub use crate::text_page::TextPage;
+pub use crate::verbose_page::VerbosePage;
