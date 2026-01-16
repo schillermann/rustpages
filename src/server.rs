@@ -1,4 +1,4 @@
-use crate::{Page, Session, SimpleOutput};
+use crate::{Page, ServerSession, SimpleOutput};
 use std::io;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -45,7 +45,7 @@ impl Server {
             return Ok(());
         }
         let request = String::from_utf8_lossy(&buffer[..total]);
-        let page = Session::new(self.page.as_ref()).with(request.as_ref());
+        let page = ServerSession::new(self.page.fresh()).with(request.as_ref());
         let output = page.via(Box::new(SimpleOutput::new("")));
         output.write_to(&mut stream)?;
         stream.flush()

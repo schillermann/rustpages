@@ -14,10 +14,13 @@ impl VerbosePage {
 }
 
 impl Page for VerbosePage {
-    fn with(&self, key: &str, value: &str) -> Box<dyn Page> {
-        let mut args = self.args.clone();
-        args.insert(key.to_string(), value.to_string());
-        Box::new(Self { args })
+    fn fresh(&self) -> Box<dyn Page> {
+        Box::new(Self::new())
+    }
+
+    fn with(mut self: Box<Self>, key: &str, value: &str) -> Box<dyn Page> {
+        self.args.insert(key.to_string(), value.to_string());
+        self
     }
 
     fn via(&self, output: Box<dyn Output>) -> Box<dyn Output> {

@@ -1,35 +1,39 @@
 use crate::{Output, Page};
-use std::sync::Arc;
 
 pub struct PageWithRoutes {
     path: String,
-    right: Arc<dyn Page>,
-    wrong: Arc<dyn Page>,
+    right: Box<dyn Page>,
+    wrong: Box<dyn Page>,
 }
 
 impl PageWithRoutes {
     pub fn new(path: &str, right: Box<dyn Page>, wrong: Box<dyn Page>) -> Self {
         Self {
             path: path.to_string(),
-            right: Arc::from(right),
-            wrong: Arc::from(wrong),
+            right,
+            wrong,
         }
     }
 }
 
 impl Page for PageWithRoutes {
-    fn with(&self, key: &str, value: &str) -> Box<dyn Page> {
+    fn fresh(&self) -> Box<dyn Page> {
+        Box::new(Self::new(
+            &self.path,
+            self.right.fresh(),
+            self.wrong.fresh(),
+        ))
+    }
+
+    fn with(self: Box<Self>, key: &str, value: &str) -> Box<dyn Page> {
+        let PageWithRoutes { path, right, wrong } = *self;
         if key == "RustPages-Path" {
-            if value == self.path {
-                return self.right.with(key, value);
+            if value == path {
+                return right.with(key, value);
             }
-            return self.wrong.with(key, value);
+            return wrong.with(key, value);
         }
-        Box::new(Self {
-            path: self.path.clone(),
-            right: Arc::clone(&self.right),
-            wrong: Arc::clone(&self.wrong),
-        })
+        Box::new(Self { path, right, wrong })
     }
 
     fn via(&self, output: Box<dyn Output>) -> Box<dyn Output> {
@@ -51,11 +55,11 @@ mod tests {
 
     #[test]
     fn routes_to_right_page() {
-        let page = PageWithRoutes::new(
+        let page = Box::new(PageWithRoutes::new(
             "/ok",
             Box::new(SimplePage::new("right")),
             Box::new(SimplePage::new("wrong")),
-        );
+        ));
         let routed = page.with("RustPages-Path", "/ok");
         let text = render(routed);
         assert!(text.contains("right"));
@@ -63,11 +67,11 @@ mod tests {
 
     #[test]
     fn routes_to_wrong_page() {
-        let page = PageWithRoutes::new(
+        let page = Box::new(PageWithRoutes::new(
             "/ok",
             Box::new(SimplePage::new("right")),
             Box::new(SimplePage::new("wrong")),
-        );
+        ));
         let routed = page.with("RustPages-Path", "/nope");
         let text = render(routed);
         assert!(text.contains("wrong"));

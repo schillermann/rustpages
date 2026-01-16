@@ -13,10 +13,12 @@ impl TextPage {
 }
 
 impl Page for TextPage {
-    fn with(&self, _key: &str, _value: &str) -> Box<dyn Page> {
-        Box::new(Self {
-            body: self.body.clone(),
-        })
+    fn fresh(&self) -> Box<dyn Page> {
+        Box::new(Self::new(&self.body))
+    }
+
+    fn with(self: Box<Self>, _key: &str, _value: &str) -> Box<dyn Page> {
+        self
     }
 
     fn via(&self, output: Box<dyn Output>) -> Box<dyn Output> {

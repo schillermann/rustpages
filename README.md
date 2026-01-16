@@ -39,8 +39,9 @@ fn main() -> std::io::Result<()> {
 
 #### Quickstart
 
-This keeps the core and UI as separate processes. The core exposes `/state` and
-`/cmd` over HTTP; the UI sends commands and renders state.
+This keeps the core and UI as separate processes. The core runs a TCP server
+exposing `/state` and `/cmd` over HTTP; the UI connects as a TCP client, sends
+commands, and renders state in a loop.
 
 ##### Core
 
@@ -112,25 +113,15 @@ fn main() -> std::io::Result<()> {
 ##### UI
 
 ```rust
-use std::io::{Read, Write};
-use std::net::TcpStream;
+use rustpages::{Terminal, TextPage};
 
-fn request(path: &str) -> String {
-    let mut stream = TcpStream::connect(("127.0.0.1", 8080)).unwrap();
-    let req = format!("GET {} HTTP/1.1\r\nHost: localhost\r\n\r\n", path);
-    stream.write_all(req.as_bytes()).unwrap();
-    let mut bytes = Vec::new();
-    stream.read_to_end(&mut bytes).unwrap();
-    String::from_utf8_lossy(&bytes).to_string()
-}
-
-fn main() {
-    let _ = request("/cmd?insert=hello");
-    let resp = request("/state");
-    println!("{resp}");
+fn main() -> std::io::Result<()> {
+    let terminal = Terminal::new(Box::new(TextPage::new("Hello, world!")));
+    terminal.start(8080)
 }
 ```
 
 ## Development
 
 - [Guidelines for local design rules](GUIDELINES.md)
+- [Decisions (ADRs)](docs/decisions/README.md)
